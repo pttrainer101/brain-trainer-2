@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Training App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Tone.js for binaural beats -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-inter min-h-screen flex flex-col justify-between p-4 sm:p-8">
+
+    <!-- Main Container -->
+    <div class="max-w-4xl mx-auto w-full flex flex-col space-y-8">
+
+        <!-- Top Section: Binaural Beats -->
+        <div class="bg-gray-800 p-6 rounded-3xl shadow-xl flex flex-col items-center">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-center">Gamma Binaural Beats</h2>
+            <p class="text-gray-400 text-sm mb-6 text-center">40Hz Tone for Brain Training</p>
+            <div class="flex space-x-4">
+                <button id="on-button" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    ON
+                </button>
+                <button id="off-button" class="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    OFF
+                </button>
+            </div>
+            <p id="audio-status" class="mt-4 text-sm text-gray-400"></p>
+        </div>
+
+        <!-- Middle Section: Brain Game -->
+        <div class="bg-gray-800 p-6 rounded-3xl shadow-xl flex flex-col items-center text-center">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4">Color Match Game</h2>
+            <p id="game-message" class="text-gray-400 text-sm mb-4">Correctly identify if the word matches its color.</p>
+            <div class="w-full">
+                <div id="word-display" class="font-extrabold text-5xl sm:text-6xl my-8 transition-colors duration-200" style="font-family: 'Inter', sans-serif;">
+                    <!-- Word will be displayed here -->
+                </div>
+            </div>
+            <div id="score-display" class="text-xl font-semibold text-gray-300 mb-6">Score: <span id="score-value">0</span></div>
+            <div class="flex space-x-4">
+                <button id="true-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 active:scale-95">
+                    True
+                </button>
+                <button id="false-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 active:scale-95">
+                    False
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Section: Next Course Text -->
+        <div class="bg-gray-800 p-6 rounded-3xl shadow-xl flex flex-col items-center">
+            <h3 class="text-xl sm:text-2xl font-bold">Next Training Course</h3>
+            <p class="text-gray-400 mt-2 text-center">Will be unlocked soon</p>
+        </div>
+
+    </div>
+
+    <script>
+        // Use a DOMContentLoaded listener to ensure all elements are loaded
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // === TONE.JS BINAURAL BEATS LOGIC ===
+            const onButton = document.getElementById('on-button');
+            const offButton = document.getElementById('off-button');
+            const audioStatus = document.getElementById('audio-status');
+
+            // Set up a simple oscillator for the base tone
+            const oscillator = new Tone.Oscillator({
+                frequency: 400, // A higher base frequency for audibility
+                type: "sine",
+                volume: -10 // Start with a low volume
+            }).toDestination();
+
+            // Create a second oscillator at a slightly different frequency for the beat
+            const beatOscillator = new Tone.Oscillator({
+                frequency: 440, // 40Hz higher than the base frequency
+                type: "sine",
+                volume: -10
+            }).toDestination();
+
+            // Set up the binaural beat frequency by setting the difference
+            // We'll use two separate oscillators for this effect.
+            let isPlaying = false;
+
+            // Function to start the tones
+            const startTone = async () => {
+                // Tone.js requires user interaction to start the audio context
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                }
+
+                if (!isPlaying) {
+                    // This creates the binaural beat by having one frequency 40Hz higher than the other.
+                    oscillator.frequency.value = 400; // Base frequency
+                    beatOscillator.frequency.value = 440; // Base + 40Hz
+                    oscillator.start();
+                    beatOscillator.start();
+                    isPlaying = true;
+                    audioStatus.textContent = 'Audio is playing...';
+                    onButton.disabled = true;
+                    offButton.disabled = false;
+                }
+            };
+
+            // Function to stop the tones
+            const stopTone = () => {
+                if (isPlaying) {
+                    oscillator.stop();
+                    beatOscillator.stop();
+                    isPlaying = false;
+                    audioStatus.textContent = '';
+                    onButton.disabled = false;
+                    offButton.disabled = true;
+                }
+            };
+
+            // Initial state
+            onButton.disabled = false;
+            offButton.disabled = true;
+
+            // Attach event listeners to the buttons
+            onButton.addEventListener('click', startTone);
+            offButton.addEventListener('click', stopTone);
+
+            // === BRAIN GAME LOGIC ===
+            const wordDisplay = document.getElementById('word-display');
+            const scoreValue = document.getElementById('score-value');
+            const gameMessage = document.getElementById('game-message');
+            const trueButton = document.getElementById('true-button');
+            const falseButton = document.getElementById('false-button');
+
+            // Game state variables
+            const wordsAndColors = ['red', 'blue', 'green', 'yellow', 'blue'];
+            let score = 0;
+            let currentWord;
+            let currentColor;
+
+            // Function to generate a new round
+            const newRound = () => {
+                // Pick a random word from the array
+                const wordIndex = Math.floor(Math.random() * wordsAndColors.length);
+                currentWord = wordsAndColors[wordIndex];
+
+                // Pick a random color from the array
+                const colorIndex = Math.floor(Math.random() * wordsAndColors.length);
+                currentColor = wordsAndColors[colorIndex];
+
+                // Update the display
+                wordDisplay.textContent = currentWord;
+                // Set the text color based on the random color
+                wordDisplay.style.color = currentColor;
+                wordDisplay.style.textTransform = 'uppercase';
+            };
+
+            // Function to check the user's answer
+            const checkAnswer = (userAnswer) => {
+                // Determine the correct answer
+                const correctAnswer = (currentWord === currentColor);
+                let message = '';
+
+                // Compare user's answer to the correct answer
+                if ((userAnswer && correctAnswer) || (!userAnswer && !correctAnswer)) {
+                    score++;
+                    message = 'Correct! 🎉';
+                } else {
+                    score = Math.max(0, score - 1); // Don't go below zero
+                    message = 'Incorrect. 😟';
+                }
+
+                // Update the score display
+                scoreValue.textContent = score;
+
+                // Provide feedback to the user
+                gameMessage.textContent = message;
+
+                // Start a new round after a short delay
+                setTimeout(newRound, 1000);
+            };
+
+            // Attach event listeners to the game buttons
+            trueButton.addEventListener('click', () => checkAnswer(true));
+            falseButton.addEventListener('click', () => checkAnswer(false));
+
+            // Start the game
+            newRound();
+
+        });
+    </script>
+
+</body>
+</html>
